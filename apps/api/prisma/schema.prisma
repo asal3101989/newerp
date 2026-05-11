@@ -1,0 +1,507 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Tenant {
+  id        String     @id @default(uuid())
+  name      String
+  gstin     String?    @unique
+  plan      String     @default("enterprise")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  
+  users     User[]
+  roles     Role[]
+  projects  Project[]
+  materials Material[]
+  purchaseOrders PurchaseOrder[]
+  approvals      Approval[]
+  inventoryItems InventoryItem[]
+  financeSummary FinanceSummary[]
+  documents      Document[]
+  workflows      Workflow[]
+  auditLogs      AuditLog[]
+  records        GenericRecord[]
+  
+  // Phase 1 New Relations
+  vendors             Vendor[]
+  materialRequisitions MaterialRequisition[]
+  rfqs                RFQ[]
+  grns                GRN[]
+  warehouses          Warehouse[]
+  stockTransactions   StockTransaction[]
+  ledgerEntries       LedgerEntry[]
+  invoices            Invoice[]
+  bills               Bill[]
+  paymentTransactions PaymentTransaction[]
+  bankAccounts        BankAccount[]
+  gstReturns          GSTReturn[]
+  subcontractors      Subcontractor[]
+  raBills             RABill[]
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  code        String   @unique // e.g., "project.view"
+  description String?
+  roles       RolePermission[]
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  level       Int      @default(10) // 1-100
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  permissions RolePermission[]
+  users       User[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model RolePermission {
+  id           String   @id @default(uuid())
+  roleId       String
+  permissionId String
+
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId])
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  phone        String?
+  department   String?
+  roleId       String?
+  tenantId     String
+  mfaEnabled   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  role         Role?    @relation(fields: [roleId], references: [id])
+  approvalsRequested Approval[] @relation("Requestor")
+  approvalsAssigned  Approval[] @relation("Approver")
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+}
+
+model GenericRecord {
+  id        String   @id @default(uuid())
+  module    String   // e.g., "admin-companies", "procurement-purchase-orders"
+  recordId  String   // display ID like "ADM-1101"
+  primary   String
+  secondary String   @default("")
+  value     String   @default("")
+  owner     String   @default("")
+  status    String   @default("Active")
+  tenantId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, module])
+}
+
+model InventoryItem {
+  id         String   @id @default(uuid())
+  material   String
+  sku        String?
+  category   String?
+  unit       String   @default("Nos")
+  warehouseId String?
+  onHand     Float    @default(0)
+  minLevel   Float    @default(0)
+  status     String   @default("ok") // ok, low, critical
+  tenantId   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  warehouse  Warehouse? @relation(fields: [warehouseId], references: [id])
+  transactions StockTransaction[]
+}
+
+model Warehouse {
+  id        String   @id @default(uuid())
+  name      String
+  location  String?
+  tenantId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  items     InventoryItem[]
+
+  @@index([tenantId])
+}
+
+model StockTransaction {
+  id          String   @id @default(uuid())
+  itemId      String
+  type        String   // IN, OUT, TRANSFER, SCRAP
+  quantity    Float
+  referenceId String?  // e.g., GRN ID or Issue ID
+  tenantId    String
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  item        InventoryItem @relation(fields: [itemId], references: [id])
+}
+
+model FinanceSummary {
+  id               String   @id @default(uuid())
+  cashflowDays     Int      @default(0)
+  vendorDuesCr     Float    @default(0.0)
+  gstLiabilityCr   Float    @default(0.0)
+  bankBalanceCr    Float    @default(0.0)
+  revenueThisMonthCr Float  @default(0.0)
+  arOutstandingCr  Float    @default(0.0)
+  apOutstandingCr  Float    @default(0.0)
+  tenantId         String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  tenant           Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model LedgerEntry {
+  id          String   @id @default(uuid())
+  date        DateTime @default(now())
+  accountName String
+  description String?
+  debit       Float    @default(0)
+  credit      Float    @default(0)
+  referenceId String?
+  tenantId    String
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model Invoice {
+  id          String   @id @default(uuid())
+  invoiceNo   String   @unique
+  clientName  String
+  amount      Float
+  taxAmount   Float    @default(0)
+  totalAmount Float
+  dueDate     DateTime
+  status      String   @default("Draft") // Draft, Sent, Paid, Overdue
+  tenantId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  payments    PaymentTransaction[] @relation("InvoicePayments")
+}
+
+model Bill {
+  id          String   @id @default(uuid())
+  billNo      String   @unique
+  vendorName  String
+  amount      Float
+  taxAmount   Float    @default(0)
+  totalAmount Float
+  dueDate     DateTime
+  status      String   @default("Draft") // Draft, Approved, Paid, Overdue
+  tenantId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  vendorId    String?
+  vendor      Vendor?  @relation(fields: [vendorId], references: [id])
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  payments    PaymentTransaction[] @relation("BillPayments")
+}
+
+model PaymentTransaction {
+  id          String   @id @default(uuid())
+  date        DateTime @default(now())
+  amount      Float
+  method      String   // Bank, Cash, Cheque
+  reference   String?
+  type        String   // RECEIPT, PAYMENT
+  invoiceId   String?
+  billId      String?
+  tenantId    String
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  invoice     Invoice? @relation("InvoicePayments", fields: [invoiceId], references: [id])
+  bill        Bill?    @relation("BillPayments", fields: [billId], references: [id])
+}
+
+model BankAccount {
+  id          String   @id @default(uuid())
+  bankName    String
+  accountNo   String
+  ifsc        String?
+  balance     Float    @default(0)
+  tenantId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model GSTReturn {
+  id          String   @id @default(uuid())
+  period      String   // e.g., "Apr-2026"
+  type        String   // GSTR-1, GSTR-3B
+  status      String   @default("Pending")
+  filedAt     DateTime?
+  tenantId    String
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model Document {
+  id             String   @id @default(uuid())
+  name           String
+  type           String?  // Drawing, Contract, Invoice, etc.
+  version        String   @default("1")
+  approvalStatus String   @default("pending")
+  ocrConfidence  Float?
+  tenantId       String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model Workflow {
+  id          String   @id @default(uuid())
+  name        String
+  trigger     String?
+  enabled     Boolean  @default(true)
+  actions     String?  // JSON stringified array
+  tenantId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  entity    String
+  entityId  String?
+  action    String
+  userId    String?
+  tenantId  String
+  metadata  String?  // JSON stringified
+  createdAt DateTime @default(now())
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  type        String?
+  clientName  String?
+  contractValue Float  @default(0)
+  startDate   DateTime?
+  endDate     DateTime?
+  location    String?
+  city        String?
+  status      String   @default("Live")
+  progress    Int      @default(0)
+  budget      Float    @default(0)
+  spent       Float    @default(0)
+  wbsCode     String?
+  milestones  String?  // JSON stringified
+  lat         Float?
+  lng         Float?
+  tenantId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  approvals   Approval[]
+  raBills     RABill[]
+}
+
+model Vendor {
+  id          String   @id @default(uuid())
+  name        String
+  gstNo       String?
+  email       String?
+  phone       String?
+  address     String?
+  status      String   @default("Active")
+  tenantId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  rfqs        RFQ[]
+  purchaseOrders PurchaseOrder[]
+  bills       Bill[]
+}
+
+model MaterialRequisition {
+  id          String   @id @default(uuid())
+  mrNo        String   @unique
+  projectId   String?
+  requesterId String
+  items       String   // JSON stringified
+  status      String   @default("Pending") // Pending, Approved, Issued, RFQ-Issued
+  tenantId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  rfqs        RFQ[]
+}
+
+model RFQ {
+  id          String   @id @default(uuid())
+  rfqNo       String   @unique
+  mrId        String?
+  vendorId    String?
+  status      String   @default("Open") // Open, Closed, Awarded
+  tenantId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  mr          MaterialRequisition? @relation(fields: [mrId], references: [id])
+  vendor      Vendor?  @relation(fields: [vendorId], references: [id])
+}
+
+model Material {
+  id        String   @id @default(uuid())
+  item      String
+  vendor    String?
+  requiredQty Int    @default(0)
+  stockQty  Int      @default(0)
+  tenantId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  purchaseOrders PurchaseOrder[]
+}
+
+model PurchaseOrder {
+  id          String   @id @default(uuid())
+  poNumber    String   @unique
+  status      String   @default("Pending") // Pending, Approved, Rejected, Live, Closed
+  amount      Float    @default(0.0)
+  gstAmount   Float    @default(0.0)
+  totalAmount Float    @default(0.0)
+  deliveryDate DateTime?
+  terms       String?
+  vendorId    String?
+  materialId  String
+  tenantId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  vendor      Vendor?  @relation(fields: [vendorId], references: [id])
+  material    Material @relation(fields: [materialId], references: [id])
+  approvals   Approval[]
+  grns        GRN[]
+}
+
+model GRN {
+  id          String   @id @default(uuid())
+  grnNo       String   @unique
+  poId        String
+  receivedDate DateTime @default(now())
+  items       String   // JSON stringified
+  status      String   @default("Received")
+  tenantId    String
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  po          PurchaseOrder @relation(fields: [poId], references: [id])
+}
+
+model Approval {
+  id             String   @id @default(uuid())
+  type           String   // e.g., "Purchase Order"
+  status         String   @default("pending") // pending, approved, rejected
+  entityId       String?
+  notes          String?
+  requestorId    String
+  approverId     String?
+  tenantId       String
+  projectId      String?
+  purchaseOrderId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  requestor      User     @relation("Requestor", fields: [requestorId], references: [id])
+  currentApprover User?   @relation("Approver", fields: [approverId], references: [id])
+  project        Project? @relation(fields: [projectId], references: [id])
+  purchaseOrder  PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+  raBill         RABill?  @relation(fields: [raBillId], references: [id])
+  raBillId       String?
+}
+
+model Subcontractor {
+  id          String   @id @default(uuid())
+  name        String
+  trade       String?  // e.g., "Electrical", "Plumbing"
+  gstNo       String?
+  panNo       String?
+  status      String   @default("Active")
+  tenantId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  raBills     RABill[]
+}
+
+model RABill {
+  id              String   @id @default(uuid())
+  billNo          String   @unique
+  projectId       String
+  subcontractorId String
+  billDate        DateTime
+  periodFrom      DateTime?
+  periodTo        DateTime?
+  
+  grossAmount     Float    @default(0) // Cumulative work done
+  prevAmount      Float    @default(0) // Previous certified amount
+  currentAmount   Float    @default(0) // Gross - Prev
+  
+  retentionAmount Float    @default(0) // Usually 5%
+  tdsAmount       Float    @default(0) // 1-2%
+  advanceRecovery Float    @default(0) // Recovery of mobilization advance
+  otherDeductions Float    @default(0)
+  
+  netPayable      Float    @default(0)
+  status          String   @default("Draft") // Draft, Certified, Approved, Paid
+  
+  tenantId        String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant          Tenant        @relation(fields: [tenantId], references: [id])
+  project         Project       @relation(fields: [projectId], references: [id])
+  subcontractor   Subcontractor @relation(fields: [subcontractorId], references: [id])
+  approvals       Approval[]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "NirmaanCloud",
+  "short_name": "Nirmaan",
+  "description": "AI-powered Construction ERP for Site Engineers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#eef3f8",
+  "theme_color": "#12335f",
+  "icons": []
+}

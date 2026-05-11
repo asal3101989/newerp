@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#2563eb" />
+    <title>NirmaanCloud AI Construction ERP</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Primary navigation">
+        <div class="brand">
+          <span class="brand-mark">NC</span>
+          <span>
+            <strong>NirmaanCloud</strong>
+            <small>AI Construction ERP</small>
+          </span>
+        </div>
+
+        <nav class="nav-list" id="navList"></nav>
+
+        <div class="sidebar-card">
+          <span class="status-dot"></span>
+          <div>
+            <strong>Automation Health</strong>
+            <small>147 live workflows, 98.4% SLA met</small>
+          </div>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <button class="icon-button mobile-menu" id="menuToggle" aria-label="Toggle navigation">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.3-4.3m1.3-5.2a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z"/></svg>
+            <input id="globalSearch" type="search" placeholder="Search projects, vendors, bills, drawings, DPRs..." />
+          </div>
+          <div class="top-actions">
+            <button class="ghost-button" id="mobileSync">Offline ready</button>
+            <button class="icon-button" id="themeToggle" aria-label="Toggle dark mode">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 7.7A9 9 0 1 1 12 3Z"/></svg>
+            </button>
+            <button class="primary-button">Create workflow</button>
+          </div>
+        </header>
+
+        <section class="hero-panel">
+          <div class="hero-copy">
+            <span class="eyebrow">India-ready cloud ERP</span>
+            <h1>AI-powered construction operations without duplicate entry.</h1>
+            <p>
+              Manage projects, procurement, finance, labour, contractors, safety, quality, documents, and customer updates
+              through one connected automation layer.
+            </p>
+            <div class="hero-actions">
+              <button class="primary-button">Run AI project review</button>
+              <button class="secondary-button">Open mobile cockpit</button>
+            </div>
+          </div>
+          <div class="ai-brief">
+            <div class="brief-header">
+              <span>AI Command Center</span>
+              <strong>Live</strong>
+            </div>
+            <div class="assistant-orb">
+              <span></span>
+            </div>
+            <p id="aiInsight">Forecast says Tower B may slip 11 days unless shuttering crew capacity improves this week.</p>
+            <div class="brief-grid">
+              <span>OCR invoices</span>
+              <span>Delay prediction</span>
+              <span>Cashflow risk</span>
+              <span>Voice commands</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="role-strip" aria-label="Role dashboards">
+          <button class="role-pill active" data-role="Executive">Executive</button>
+          <button class="role-pill" data-role="Project">Project</button>
+          <button class="role-pill" data-role="Finance">Finance</button>
+          <button class="role-pill" data-role="Site">Site engineer</button>
+          <button class="role-pill" data-role="Vendor">Vendor</button>
+          <button class="role-pill" data-role="Customer">Customer</button>
+        </section>
+
+        <section class="kpi-grid" id="kpiGrid"></section>
+
+        <section class="dashboard-layout">
+          <div class="widget-zone">
+            <div class="section-heading">
+              <div>
+                <span class="eyebrow">Drag and drop</span>
+                <h2 id="roleTitle">Executive dashboard</h2>
+              </div>
+              <button class="secondary-button compact">Customize</button>
+            </div>
+            <div class="widget-grid" id="widgetGrid"></div>
+          </div>
+
+          <aside class="right-rail">
+            <div class="panel">
+              <div class="section-heading compact-heading">
+                <h2>Smart approvals</h2>
+                <span class="count-badge">32</span>
+              </div>
+              <div id="approvalList" class="stack-list"></div>
+            </div>
+
+            <div class="panel">
+              <div class="section-heading compact-heading">
+                <h2>Workflow engine</h2>
+                <span class="count-badge green">Auto</span>
+              </div>
+              <div class="workflow-map">
+                <span>MR</span>
+                <i></i>
+                <span>RFQ</span>
+                <i></i>
+                <span>PO</span>
+                <i></i>
+                <span>GRN</span>
+                <i></i>
+                <span>AP</span>
+              </div>
+              <p class="muted">Conditional approvals, SLA escalation, auto task creation, invoice OCR, and vendor onboarding.</p>
+            </div>
+          </aside>
+        </section>
+
+        <section class="module-section">
+          <div class="section-heading">
+            <div>
+              <span class="eyebrow">Connected suite</span>
+              <h2>Twenty integrated modules</h2>
+            </div>
+            <div class="segment-control" role="tablist" aria-label="Module filter">
+              <button class="active" data-filter="all">All</button>
+              <button data-filter="ai">AI</button>
+              <button data-filter="field">Field</button>
+              <button data-filter="finance">Finance</button>
+            </div>
+          </div>
+          <div class="module-grid" id="moduleGrid"></div>
+        </section>
+
+        <section class="operations-grid">
+          <div class="panel wide">
+            <div class="section-heading compact-heading">
+              <h2>Indian compliance and integrations</h2>
+              <span class="count-badge">Live APIs</span>
+            </div>
+            <div class="integration-grid" id="integrationGrid"></div>
+          </div>
+          <div class="panel mobile-preview">
+            <div class="phone-shell">
+              <div class="phone-top"></div>
+              <div class="phone-screen">
+                <span class="eyebrow">Site engineer app</span>
+                <h3>DPR auto-draft</h3>
+                <div class="phone-card">Geo-tagged attendance synced</div>
+                <div class="phone-card">12 photos added to Tower C</div>
+                <div class="phone-card">Voice note converted to NCR</div>
+                <button class="primary-button full">Submit DPR</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="report-band">
+          <div>
+            <span class="eyebrow">Reports</span>
+            <h2>Board-ready reports, generated automatically.</h2>
+          </div>
+          <div class="report-chips" id="reportChips"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
